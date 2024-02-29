@@ -35,29 +35,43 @@ class Node:
                 temp_points[1]+=1
             self.right = Node(turn, right, temp_points)
     
+    def get_moves(self):
+        if self.left is not None and self.right is not None:
+            return [self.left , self.right]
+        if self.left is not None and self.right is None:
+            return [self.left]
+        if self.left is None and self.right is not None:
+            return [self.right]
+    
+    def gamestate_terminal(self):
+        if self.left is None and self.right is None:
+            return True
+        else: return False
+    
 
 def gen_gamestates(gamestate):
     if gamestate is None:
         return
     gamestate.add_left_div2()
     gamestate.add_right_div3()
-    gen_gamestates(gamestate.left)  
+    gen_gamestates(gamestate.left)
     gen_gamestates(gamestate.right)
 
+def can_divide_to_10_or_less(n):
+    while n > 10:
+        if n % 2 == 0:
+            n //= 2
+        elif n % 3 == 0:
+            n //= 3
+        else:
+            return False
+    return True
 
 def gen_start(starting_num):
     while len(starting_num) < 5 :
-        temp = random.randint(1,10)
-        while(1):
-            rand = random.choice([True, False])
-            if rand == True:
-                temp=temp*2
-            else:
-                temp=temp*3
-            if temp > 10000 and temp<20000:
-                starting_num.append(temp)
-            if temp>20000:
-                break
+        num = random.randint(10000,20000)
+        if can_divide_to_10_or_less(num):
+            starting_num.append(num)
     return starting_num
 
 def make_button(win, x, y, h, w, *arg1, **arg2):
@@ -83,6 +97,7 @@ def create_player_labels(window):
 def create_choices(window, starting_num):
     choice=tk.IntVar(value=10)
     player=tk.IntVar(value=10)
+    ai=tk.IntVar(value=10)
     btns = []
     frame = tk.Frame(window, height = 400, width=625, bg="lightblue")
     frame.pack_propagate(0)
@@ -96,35 +111,81 @@ def create_choices(window, starting_num):
         btns.append(make_button(frame, 75, 275, 100, 200, text="1" + ".", command=lambda index=1: select_player(index)))
         btns.append(make_button(frame, 350, 275, 100, 200, text="2" + ".", command=lambda index=2: select_player(index)))
 
+    def select_ai(index):
+        ai.set(index)
+        frame.destroy()
+
+        
+
     
     def select_player(index):
         player.set(index)
-        frame.destroy()
+        for i in range(2):
+            btns[i].destroy()
+        label.configure(text="Choose AI")
+        btns.append(make_button(frame, 75, 275, 100, 200, text="MINIMAX", command=lambda index=1: select_ai(index)))
+        btns.append(make_button(frame, 350, 275, 100, 200, text="ALFA-BETA", command=lambda index=2: select_ai(index)))
 
     for i in range(5):
         btns.append(make_button(frame, 25 + i * 115, 275, 100, 100, text=str(i + 1) + ".", command=lambda index=i: select_choice(index)))
 
-    return choice, player
+    return choice, player,ai
+
+def minimax(gamestate,maximizing):
+    if gamestate.gamestate_terminal():
+        return gamestate.points[2], gamestate
+    
+    if maximizing:
+        value = float('-inf')
+        possible_moves = gamestate.get_moves()
+        for move in possible_moves:
+            tmp,_ = minimax(move, False)
+            if tmp > value:
+                value = tmp
+                best_move = move
+    else:
+        value = float('inf')
+        possible_moves = gamestate.get_moves()
+        for move in possible_moves:
+            tmp,_ = minimax(move,True)
+            if tmp < value:
+                value = tmp
+                best_move = move
+    return value, best_move
+        
 
 
 
 def main_app(root):
-    global label_p1, label_bank, label_p2, label_num, div2_btn, div3_btn, label_turn, gamestate, ai_turn
+    global label_p1, label_bank, label_p2, label_num, div2_btn, div3_btn, label_turn, gamestate, ai
+
+    def call_ai():
+        global ai, gamestate
+        if gamestate.gamestate_terminal() == False:
+            print("calling ai")
+            print(ai)
+            if ai == 1:
+                value, move = minimax(gamestate, True)
+                gamestate = move
+                check_forwinner()
+                print(value)
+
     def retry():
         window.destroy()
         main_app(root)
         
     def on_start():
-        global gamestate, ai_turn
+        global gamestate,ai
         str_btn.destroy()
-        choice_var, counter_var = create_choices(window, starting_num)
+        choice_var, start_player_var, ai_var = create_choices(window, starting_num)
         window.wait_variable(choice_var)
-        window.wait_variable(counter_var)
+        window.wait_variable(start_player_var)
+        window.wait_variable(ai_var)
         choice = choice_var.get()
-        counter = counter_var.get()
-        if choice >=0 and choice<5 and counter==2 or counter == 1:
-            gamestate= Node(counter,starting_num[choice],[0,0,0])
-            ai_turn = counter
+        start_player = start_player_var.get()
+        ai = ai_var.get()  
+        if choice >=0 and choice<5 and (start_player==2 or start_player == 1) and (ai== 1 or ai ==2):
+            gamestate= Node(start_player,starting_num[choice],[0,0,0])
             gen_gamestates(gamestate)
             on_choice()
             
@@ -135,6 +196,7 @@ def main_app(root):
         label_num=make_label(window,225,85,50,175,text=gamestate.num)
         if gamestate.turn % 2 == 0:
             label_turn.config(text="Player 2 turn")
+            call_ai()
         else:
             label_turn.config(text="Player 1 turn")
         
@@ -147,7 +209,6 @@ def main_app(root):
             return
         gamestate = gamestate.left
         check_forwinner()
-        update_points()
         
     def div3():
         global gamestate
@@ -155,10 +216,11 @@ def main_app(root):
             return
         gamestate = gamestate.right
         check_forwinner()
-        update_points()
+
 
     def check_forwinner():
         global gamestate
+        update_points()
         if gamestate.num %3 !=0 and gamestate.num%2 !=0 or gamestate.num <=10:
             if gamestate.turn%2==0:
                 gamestate.points[2]= gamestate.points[2]+gamestate.points[1]
@@ -188,6 +250,7 @@ def main_app(root):
         label_p2.config(text="Player 2: " + str(gamestate.points[2]))
         if gamestate.turn % 2 == 0:
             label_turn.config(text="Player 2 turn")
+            call_ai()
         else:
             label_turn.config(text="Player 1 turn")
 
