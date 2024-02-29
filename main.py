@@ -58,14 +58,16 @@ def gen_gamestates(gamestate):
     gen_gamestates(gamestate.right)
 
 def can_divide_to_10_or_less(n):
-    while n > 10:
-        if n % 2 == 0:
-            n //= 2
-        elif n % 3 == 0:
-            n //= 3
-        else:
-            return False
-    return True
+    if n%3==0 and n%2==0:
+        while n > 10:
+            if n % 2 == 0:
+                n //= 2
+            elif n % 3 == 0:
+                n //= 3
+            else:
+                return False
+        return True
+    return False
 
 def gen_start(starting_num):
     while len(starting_num) < 5 :
