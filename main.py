@@ -72,7 +72,7 @@ def can_divide_to_10_or_less(n):
 def gen_start(starting_num):
     while len(starting_num) < 5 :
         num = random.randint(10000,20000)
-        if can_divide_to_10_or_less(num):
+        if can_divide_to_10_or_less(num) and num not in starting_num :
             starting_num.append(num)
     return starting_num
 
@@ -135,7 +135,7 @@ def create_choices(window, starting_num):
 
 def minimax(gamestate,maximizing):
     if gamestate.gamestate_terminal():
-        return gamestate.points[2], gamestate
+        return gamestate.points[2]-gamestate.points[0], gamestate
     
     if maximizing:
         value = float('-inf')
