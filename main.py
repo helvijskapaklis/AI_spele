@@ -2,12 +2,13 @@
 import tkinter as tk
 import random
 class Node:
-    def __init__(self, turn, num, points):
+    def __init__(self, turn, num, points, div):
         self.num = num
         self.points=points
         self.turn = turn
         self.left = None
         self.right = None
+        self.div = div
     
     def add_left_div2(self):
         if self.num % 2 == 0 and self.num>10 :
@@ -20,7 +21,7 @@ class Node:
             left = self.num //2
             if self.num % 5 == 0:
                 temp_points[1]+=1
-            self.left = Node(turn, left, temp_points)
+            self.left = Node(turn, left, temp_points, 2)
 
     def add_right_div3(self):
         if self.num % 3 == 0 and self.num>10 :
@@ -33,7 +34,7 @@ class Node:
             right = self.num //3
             if self.num % 5 == 0:
                 temp_points[1]+=1
-            self.right = Node(turn, right, temp_points)
+            self.right = Node(turn, right, temp_points, 3)
     
     def get_moves(self):
         if self.left is not None and self.right is not None:
@@ -90,9 +91,9 @@ def make_label(win, x, y, h, w, **arg):
     return label
 
 def create_player_labels(window):
-    label_p1=make_label(window, 25, 10, 50, 175, text= "Player 1: 0")
+    label_p1=make_label(window, 25, 10, 50, 175, text= "Player: 0")
     label_bank=make_label(window, 225 , 10, 50, 175, text="BANK: 0")
-    label_p2=make_label(window, 425 , 10, 50, 175, text="Player 2: 0")
+    label_p2=make_label(window, 425 , 10, 50, 175, text="AI: 0")
     label_turn=make_label(window,25, 85,50,125,text="")
     return label_p1, label_bank, label_p2, label_turn
 
@@ -104,21 +105,18 @@ def create_choices(window, starting_num):
     frame = tk.Frame(window, height = 400, width=625, bg="lightblue")
     frame.pack_propagate(0)
     frame.place(x=0,y=0)
-    label = make_label(frame, 100,50,150,425, text=starting_num)
+    label = make_label(frame, 100,50,150,425, text="[" + str(starting_num[0])+"]"+" "+"[" +str(starting_num[1])+"]"+" "+"[" +str(starting_num[2])+"]"+" "+"[" +str(starting_num[3])+"]"+" "+"[" +str(starting_num[4])+"]")
     def select_choice(index):
         choice.set(index)
         for i in range(5):
             btns[i].destroy()
-        label.configure(text="Choose Player")
-        btns.append(make_button(frame, 75, 275, 100, 200, text="1" + ".", command=lambda index=1: select_player(index)))
-        btns.append(make_button(frame, 350, 275, 100, 200, text="2" + ".", command=lambda index=2: select_player(index)))
+        label.configure(text="Choose Starting Player")
+        btns.append(make_button(frame, 75, 275, 100, 200, text="You", command=lambda index=1: select_player(index)))
+        btns.append(make_button(frame, 350, 275, 100, 200, text="AI", command=lambda index=2: select_player(index)))
 
     def select_ai(index):
         ai.set(index)
         frame.destroy()
-
-        
-
     
     def select_player(index):
         player.set(index)
@@ -133,9 +131,16 @@ def create_choices(window, starting_num):
 
     return choice, player,ai
 
+def hnf_value(gamestate):
+    if gamestate.turn%2==0:
+        return gamestate.points[2]-gamestate.points[0]
+    elif gamestate.turn%2!=0:
+        return gamestate.points[2]-gamestate.points[0]+gamestate.points[1]
+    
+
 def minimax(gamestate,maximizing):
     if gamestate.gamestate_terminal():
-        return gamestate.points[2]-gamestate.points[0], gamestate
+        return hnf_value(gamestate), gamestate
     
     if maximizing:
         value = float('-inf')
@@ -164,12 +169,13 @@ def main_app(root):
     def call_ai():
         global ai, gamestate
         if gamestate.gamestate_terminal() == False:
+            div2_btn["state"] = "disabled"
+            div3_btn["state"] = "disabled"
             print("calling ai")
-            print(ai)
             if ai == 1:
                 value, move = minimax(gamestate, True)
                 gamestate = move
-                check_forwinner()
+                root.after(1000,check_forwinner)
                 print(value)
 
     def retry():
@@ -186,8 +192,8 @@ def main_app(root):
         choice = choice_var.get()
         start_player = start_player_var.get()
         ai = ai_var.get()  
-        if choice >=0 and choice<5 and (start_player==2 or start_player == 1) and (ai== 1 or ai ==2):
-            gamestate= Node(start_player,starting_num[choice],[0,0,0])
+        if (choice >=0 and choice<5) and (start_player==2 or start_player == 1) and (ai== 1 or ai ==2):
+            gamestate= Node(start_player,starting_num[choice],[0,0,0],0)
             gen_gamestates(gamestate)
             on_choice()
             
@@ -196,65 +202,76 @@ def main_app(root):
         global label_p1, label_bank, label_p2, label_num, div2_btn, div3_btn, label_turn
         label_p1, label_bank, label_p2, label_turn=create_player_labels(window)
         label_num=make_label(window,225,85,50,175,text=gamestate.num)
-        if gamestate.turn % 2 == 0:
-            label_turn.config(text="Player 2 turn")
-            call_ai()
-        else:
-            label_turn.config(text="Player 1 turn")
-        
         div2_btn = make_button(window,75,250,100,200,text="Divide :2", command = lambda : div2())
         div3_btn = make_button(window,350,250,100,200,text="Divide :3", command = lambda : div3())
+        if gamestate.turn % 2 == 0:
+            label_turn.config(text="AI's turn")
+            call_ai()
+        else:
+            label_turn.config(text="Player's turn")
+        
+        
 
     def div2():
         global gamestate
         if gamestate.left is None:
+            div2_btn["state"] = "disabled"
             return
         gamestate = gamestate.left
         check_forwinner()
+        call_ai()
         
     def div3():
         global gamestate
         if gamestate.right is None:
+            div3_btn["state"] = "disabled"
             return
         gamestate = gamestate.right
         check_forwinner()
+        call_ai()
 
 
     def check_forwinner():
         global gamestate
         update_points()
-        if gamestate.num %3 !=0 and gamestate.num%2 !=0 or gamestate.num <=10:
-            if gamestate.turn%2==0:
+        if gamestate.gamestate_terminal():
+            if gamestate.turn%2!=0:
                 gamestate.points[2]= gamestate.points[2]+gamestate.points[1]
+                update_points()
             else:
                 gamestate.points[0]= gamestate.points[0]+gamestate.points[1]
-            update_points()
-            text="Its a draw !!!"
+                update_points()
             div3_btn.destroy()
             div2_btn.destroy()
-
-            if gamestate.points[0]> gamestate.points[2]:
-                text="Player 1 wins !!!"
-
-            if gamestate.points[2]> gamestate.points[0]:
-                text="Player 2 wins !!!"
-
+            if gamestate.points[0]==gamestate.points[2]:
+                text="Its a draw !!!"
+            elif gamestate.points[0]> gamestate.points[2]:
+                text="Player wins !!!"
+            elif gamestate.points[2]> gamestate.points[0]:
+                text="AI wins !!!"
+            
+            print(gamestate.turn)
             label = make_label(window,225,150,50,175,text=text)
             btn = make_button(window, 250,225,50,125,text="RETRY", command= lambda: retry())
             btn2 = make_button(window, 250,300,50,125,text="EXIT", command= lambda: exit())
+        else:
+            if gamestate.right is not None:
+                div3_btn["state"] = "normal"
+            if gamestate.left is not None:
+                div2_btn["state"] = "normal"
 
 
 
     def update_points():
         label_bank.config(text="BANK: " + str(gamestate.points[1]))
         label_num.config(text=gamestate.num)
-        label_p1.config(text="Player 1: " + str(gamestate.points[0]))
-        label_p2.config(text="Player 2: " + str(gamestate.points[2]))
-        if gamestate.turn % 2 == 0:
-            label_turn.config(text="Player 2 turn")
-            call_ai()
-        else:
-            label_turn.config(text="Player 1 turn")
+        label_p1.config(text="Player: " + str(gamestate.points[0]))
+        label_p2.config(text="AI: " + str(gamestate.points[2]))
+        if not gamestate.gamestate_terminal():
+            if gamestate.turn % 2 == 0:
+                label_turn.config(text="AI's turn")
+            else:
+                label_turn.config(text="Player's turn")
 
     starting_num = gen_start([])
     window = tk.Frame(root, height = 400, width=625, bg="lightblue")
