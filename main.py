@@ -133,7 +133,7 @@ def create_choices(window, starting_num):
 
 def hnf_value(gamestate):
     if gamestate.turn%2==0:
-        return gamestate.points[2]-gamestate.points[0]
+        return gamestate.points[2]-gamestate.points[0]-gamestate.points[1]
     elif gamestate.turn%2!=0:
         return gamestate.points[2]-gamestate.points[0]+gamestate.points[1]
     
