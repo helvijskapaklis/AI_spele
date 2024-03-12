@@ -159,7 +159,37 @@ def minimax(gamestate,maximizing):
                 value = tmp
                 best_move = move
     return value, best_move
-        
+
+def alfabeta(gamestate, maximizing, alpha, beta):
+    if gamestate.gamestate_terminal():
+        return hnf_value(gamestate), gamestate
+    
+    if maximizing:
+        value = float('-inf')
+        possible_moves = gamestate.get_moves()
+        for move in possible_moves:
+            tmp,_ = minimax(move, False)
+            if tmp > value:
+                value = tmp
+                best_move = move
+            if value > alpha:
+                alpha = value
+            if beta <= alpha:
+                break
+    else:
+        value = float('inf')
+        possible_moves = gamestate.get_moves()
+        for move in possible_moves:
+            tmp,_ = minimax(move,True)
+            if tmp < value:
+                value = tmp
+                best_move = move
+            if beta < value:
+                beta = value
+            if beta <= alpha:
+                break
+                    
+    return value, best_move
 
 
 
@@ -174,6 +204,11 @@ def main_app(root):
             print("calling ai")
             if ai == 1:
                 value, move = minimax(gamestate, True)
+                gamestate = move
+                root.after(1000,check_forwinner)
+                print(value)
+            if ai == 2:
+                value, move = alfabeta(gamestate, True, float('-inf'), float('inf'))
                 gamestate = move
                 root.after(1000,check_forwinner)
                 print(value)
