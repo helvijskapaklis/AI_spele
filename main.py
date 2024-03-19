@@ -78,15 +78,38 @@ def gen_start(starting_num):
     return starting_num
 
 def make_button(win, x, y, h, w, *arg1, **arg2):
-    btn = tk.Button(win, *arg1, **arg2,font=("Arial",16))
+    btn = tk.Button(win, *arg1, **arg2, font=("Calibri",16,"bold"))
+    btn.configure(
+        bg="#0D47A1",
+        fg="#DCEDC8",
+        border=0,
+        activebackground="#1565C0",
+        activeforeground="#DCEDC8", 
+        highlightbackground="#1976D2",
+        highlightcolor="#1976D2",
+        highlightthickness=2 
+    )
     btn.place(x = x, y = y, width = w, height = h)
+    def on_enter(event):
+        btn.config(bg="#1976D2")
+
+    def on_leave(event):
+        btn.config(bg="#0D47A1")
+
+    btn.bind("<Enter>", on_enter)
+    btn.bind("<Leave>", on_leave)
+    
     return btn
 
 def make_label(win, x, y, h, w, **arg):
     frame = tk.Frame(win, height=h, width=w)
     frame.pack_propagate(0)
     frame.place(x=x, y=y)
-    label = tk.Label(frame, **arg, wraplength=w-10, font=("Arial",16))
+    label = tk.Label(frame, **arg, wraplength=w-10, font=("Calibri",16,"bold"))
+    label.configure(
+        bg="#0D47A1",
+        fg="#DCEDC8"
+    )
     label.pack(fill="both", expand=1)
     return label
 
@@ -102,7 +125,7 @@ def create_choices(window, starting_num):
     player=tk.IntVar(value=10)
     ai=tk.IntVar(value=10)
     btns = []
-    frame = tk.Frame(window, height = 400, width=625, bg="lightblue")
+    frame = tk.Frame(window, height = 400, width=625, bg="#04142E")
     frame.pack_propagate(0)
     frame.place(x=0,y=0)
     label = make_label(frame, 100,50,150,425, text="[" + str(starting_num[0])+"]"+" "+"[" +str(starting_num[1])+"]"+" "+"[" +str(starting_num[2])+"]"+" "+"[" +str(starting_num[3])+"]"+" "+"[" +str(starting_num[4])+"]")
@@ -237,8 +260,8 @@ def main_app(root):
         global label_p1, label_bank, label_p2, label_num, div2_btn, div3_btn, label_turn
         label_p1, label_bank, label_p2, label_turn=create_player_labels(window)
         label_num=make_label(window,225,85,50,175,text=gamestate.num)
-        div2_btn = make_button(window,75,250,100,200,text="Divide :2", command = lambda : div2())
-        div3_btn = make_button(window,350,250,100,200,text="Divide :3", command = lambda : div3())
+        div2_btn = make_button(window,75,250,100,200,text="Divide by 2", command = lambda : div2())
+        div3_btn = make_button(window,350,250,100,200,text="Divide by 3", command = lambda : div3())
         if gamestate.turn % 2 == 0:
             label_turn.config(text="AI's turn")
             call_ai()
@@ -309,7 +332,7 @@ def main_app(root):
                 label_turn.config(text="Player's turn")
 
     starting_num = gen_start([])
-    window = tk.Frame(root, height = 400, width=625, bg="lightblue")
+    window = tk.Frame(root, height = 400, width=625, bg="#04142E")
     window.pack_propagate(0)
     window.place(x=0,y=0)
     str_btn = make_button(window, 100, 100, 200, 425, text="START", command=lambda: on_start() )
@@ -321,4 +344,5 @@ def main():
     main_app(root)
     root.mainloop()
     
-main()  
+if __name__ == "__main__":
+    main()  
