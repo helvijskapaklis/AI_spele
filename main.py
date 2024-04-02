@@ -1,6 +1,8 @@
 # python3
 import tkinter as tk
 import random
+import time
+
 class Node:
     def __init__(self, turn, num, points, div):
         self.num = num
@@ -159,12 +161,13 @@ def hnf_value(gamestate):
         return gamestate.points[2]-gamestate.points[0]-gamestate.points[1]
     elif gamestate.turn%2!=0:
         return gamestate.points[2]-gamestate.points[0]+gamestate.points[1]
-    
+
 
 def minimax(gamestate,maximizing):
+    global node_count
+    node_count+=1
     if gamestate.gamestate_terminal():
         return hnf_value(gamestate), gamestate
-    
     if maximizing:
         value = float('-inf')
         possible_moves = gamestate.get_moves()
@@ -184,14 +187,15 @@ def minimax(gamestate,maximizing):
     return value, best_move
 
 def alfabeta(gamestate, maximizing, alpha, beta):
+    global node_count
+    node_count+=1
     if gamestate.gamestate_terminal():
         return hnf_value(gamestate), gamestate
-    
     if maximizing:
         value = float('-inf')
         possible_moves = gamestate.get_moves()
         for move in possible_moves:
-            tmp,_ = minimax(move, False)
+            tmp,_ = alfabeta(move, False, alpha, beta)
             if tmp > value:
                 value = tmp
                 best_move = move
@@ -203,7 +207,7 @@ def alfabeta(gamestate, maximizing, alpha, beta):
         value = float('inf')
         possible_moves = gamestate.get_moves()
         for move in possible_moves:
-            tmp,_ = minimax(move,True)
+            tmp,_ = alfabeta(move, True, alpha, beta)
             if tmp < value:
                 value = tmp
                 best_move = move
@@ -220,21 +224,32 @@ def main_app(root):
     global label_p1, label_bank, label_p2, label_num, div2_btn, div3_btn, label_turn, gamestate, ai
 
     def call_ai():
-        global ai, gamestate
+        global ai, gamestate, node_count
+        node_count = 0 
         if gamestate.gamestate_terminal() == False:
             div2_btn["state"] = "disabled"
             div3_btn["state"] = "disabled"
-            print("calling ai")
+            print("izsauc ai")
             if ai == 1:
+                st = time.perf_counter()
                 value, move = minimax(gamestate, True)
+                et = time.perf_counter()
+                elapsed_time = (et - st)*1000
+                print('Gājiena izpildes laiks:', elapsed_time, 'miliseconds')
                 gamestate = move
                 root.after(1000,check_forwinner)
-                print(value)
+                print("Virsotnes apmeklētas: ", node_count)
+                print("heiristiskais novērtējums: ", value)
             if ai == 2:
+                st = time.perf_counter()
                 value, move = alfabeta(gamestate, True, float('-inf'), float('inf'))
+                et = time.perf_counter()
+                elapsed_time = (et - st)*1000
+                print('Gājiena izpildes laiks:', elapsed_time, 'miliseconds')
                 gamestate = move
                 root.after(1000,check_forwinner)
-                print(value)
+                print("Virsotnes apmeklētas: ", node_count)
+                print("heiristiskais novērtējums: ", value)
 
     def retry():
         window.destroy()
@@ -308,7 +323,7 @@ def main_app(root):
             elif gamestate.points[2]> gamestate.points[0]:
                 text="AI wins !!!"
             
-            print(gamestate.turn)
+            
             label = make_label(window,225,150,50,175,text=text)
             btn = make_button(window, 250,225,50,125,text="RETRY", command= lambda: retry())
             btn2 = make_button(window, 250,300,50,125,text="EXIT", command= lambda: exit())
