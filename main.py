@@ -5,6 +5,8 @@ import time
 
 class Node:
     def __init__(self, turn, num, points, div):
+        # Bināra speles koka datu struktura
+        
         self.num = num
         self.points=points
         self.turn = turn
@@ -13,6 +15,7 @@ class Node:
         self.div = div
     
     def add_left_div2(self):
+        # Pievieno kreiso pecteci kas ir saistits ar gajienu dalits 2
         if self.num % 2 == 0 and self.num>10 :
             temp_points=self.points.copy()
             if self.turn %2==0:
@@ -26,6 +29,7 @@ class Node:
             self.left = Node(turn, left, temp_points, 2)
 
     def add_right_div3(self):
+        # Pievieno labo pecteci kas ir saistits ar gajienu dalits 3
         if self.num % 3 == 0 and self.num>10 :
             temp_points=self.points.copy()
             if self.turn %2==0:
@@ -39,6 +43,7 @@ class Node:
             self.right = Node(turn, right, temp_points, 3)
     
     def get_moves(self):
+        # Atgriež pieejamos gajienus
         if self.left is not None and self.right is not None:
             return [self.left , self.right]
         if self.left is not None and self.right is None:
@@ -47,12 +52,14 @@ class Node:
             return [self.right]
     
     def gamestate_terminal(self):
+        # Parbauda vai speles gajiena virsotne ir galēja jeb speles beidzamais stavoklis
         if self.left is None and self.right is None:
             return True
         else: return False
     
 
 def gen_gamestates(gamestate):
+    # Izveido speles binaro koku
     if gamestate is None:
         return
     gamestate.add_left_div2()
@@ -61,6 +68,7 @@ def gen_gamestates(gamestate):
     gen_gamestates(gamestate.right)
 
 def can_divide_to_10_or_less(n):
+    # Pārbauda vai dotais skaitlis var nodalīties lidz 10 vai mazak izmantojot tikai 2 un 3
     if n%3==0 and n%2==0:
         while n > 10:
             if n % 2 == 0:
@@ -73,6 +81,7 @@ def can_divide_to_10_or_less(n):
     return False
 
 def gen_start(starting_num):
+    # Izveido speles sākuma skaitlus
     while len(starting_num) < 5 :
         num = random.randint(10000,20000)
         if can_divide_to_10_or_less(num) and num not in starting_num :
@@ -80,6 +89,7 @@ def gen_start(starting_num):
     return starting_num
 
 def make_button(win, x, y, h, w, *arg1, **arg2):
+    # Funkcija kas izveido pogas priekš grafiskās saskarsnes
     btn = tk.Button(win, *arg1, **arg2, font=("Calibri",16,"bold"))
     btn.configure(
         bg="#0D47A1",
@@ -93,9 +103,11 @@ def make_button(win, x, y, h, w, *arg1, **arg2):
     )
     btn.place(x = x, y = y, width = w, height = h)
     def on_enter(event):
+        # Funkcija kas iekraso pogu kad pele ir uz tās
         btn.config(bg="#1976D2")
 
     def on_leave(event):
+        # Funkcija kas atgriež pogu uz sākuma krasu kad pele ir noņemta no tās
         btn.config(bg="#0D47A1")
 
     btn.bind("<Enter>", on_enter)
@@ -104,6 +116,7 @@ def make_button(win, x, y, h, w, *arg1, **arg2):
     return btn
 
 def make_label(win, x, y, h, w, **arg):
+    # Funkcija kas izveido grafiskas saskarsnes tekstus
     frame = tk.Frame(win, height=h, width=w)
     frame.pack_propagate(0)
     frame.place(x=x, y=y)
@@ -116,6 +129,7 @@ def make_label(win, x, y, h, w, **arg):
     return label
 
 def create_player_labels(window):
+    # Funkcija kas izveido spele izmantotus teksta laukus
     label_p1=make_label(window, 25, 10, 50, 175, text= "Player: 0")
     label_bank=make_label(window, 225 , 10, 50, 175, text="BANK: 0")
     label_p2=make_label(window, 425 , 10, 50, 175, text="AI: 0")
@@ -123,6 +137,7 @@ def create_player_labels(window):
     return label_p1, label_bank, label_p2, label_turn
 
 def create_choices(window, starting_num):
+    # Funkcija kas izveido izveles laukus pirms speles sākšanas
     choice=tk.IntVar(value=10)
     player=tk.IntVar(value=10)
     ai=tk.IntVar(value=10)
@@ -131,39 +146,46 @@ def create_choices(window, starting_num):
     frame.pack_propagate(0)
     frame.place(x=0,y=0)
     label = make_label(frame, 100,50,150,425, text="[" + str(starting_num[0])+"]"+" "+"[" +str(starting_num[1])+"]"+" "+"[" +str(starting_num[2])+"]"+" "+"[" +str(starting_num[3])+"]"+" "+"[" +str(starting_num[4])+"]")
+    for i in range(5):
+        btns.append(make_button(frame, 25 + i * 115, 275, 100, 100, text=str(i + 1) + ".", command=lambda index=i: select_choice(index)))
+    
     def select_choice(index):
+        # Funkcija kas uzstada izveleto sākuma ciparu un izveido speletaja gajienu secibas izveli
         choice.set(index)
         for i in range(5):
             btns[i].destroy()
         label.configure(text="Choose Starting Player")
         btns.append(make_button(frame, 75, 275, 100, 200, text="You", command=lambda index=1: select_player(index)))
         btns.append(make_button(frame, 350, 275, 100, 200, text="AI", command=lambda index=2: select_player(index)))
-
-    def select_ai(index):
-        ai.set(index)
-        frame.destroy()
     
     def select_player(index):
+        # Funkcija kas uzstada izveleto speletaja secibu un izveido algoritma izveli
         player.set(index)
         for i in range(2):
             btns[i].destroy()
         label.configure(text="Choose AI")
         btns.append(make_button(frame, 75, 275, 100, 200, text="MINIMAX", command=lambda index=1: select_ai(index)))
         btns.append(make_button(frame, 350, 275, 100, 200, text="ALFA-BETA", command=lambda index=2: select_ai(index)))
+        
+    def select_ai(index):
+        # Uzstāda izvēleto algoritmu un izdzēš izvēlnes logus
+        ai.set(index)
+        frame.destroy()
 
-    for i in range(5):
-        btns.append(make_button(frame, 25 + i * 115, 275, 100, 100, text=str(i + 1) + ".", command=lambda index=i: select_choice(index)))
+    
 
     return choice, player,ai
 
 def hnf_value(gamestate):
+    # Heiristiska novertējuma funkcija
+    # F = Punktu starpiba un banka +- atkarigs no pedeja gaijiena
     if gamestate.turn%2==0:
         return gamestate.points[2]-gamestate.points[0]-gamestate.points[1]
     elif gamestate.turn%2!=0:
         return gamestate.points[2]-gamestate.points[0]+gamestate.points[1]
 
-
 def minimax(gamestate,maximizing):
+    # minimaksa algoritma implementācija
     global node_count
     node_count+=1
     if gamestate.gamestate_terminal():
@@ -187,6 +209,7 @@ def minimax(gamestate,maximizing):
     return value, best_move
 
 def alfabeta(gamestate, maximizing, alpha, beta):
+    # alfabeta algoritma implementācija
     global node_count
     node_count+=1
     if gamestate.gamestate_terminal():
@@ -224,6 +247,7 @@ def main_app(root):
     global label_p1, label_bank, label_p2, label_num, div2_btn, div3_btn, label_turn, gamestate, ai
 
     def call_ai():
+        # Funkcija kas izsauc izvēlēto algoritmu lai tas veiktu gājienu
         global ai, gamestate, node_count
         node_count = 0 
         if gamestate.gamestate_terminal() == False:
@@ -231,6 +255,7 @@ def main_app(root):
             div3_btn["state"] = "disabled"
             print("izsauc ai")
             if ai == 1:
+                # minimax
                 st = time.perf_counter()
                 value, move = minimax(gamestate, True)
                 et = time.perf_counter()
@@ -241,6 +266,7 @@ def main_app(root):
                 print("Virsotnes apmeklētas: ", node_count)
                 print("heiristiskais novērtējums: ", value)
             if ai == 2:
+                # alfa beta
                 st = time.perf_counter()
                 value, move = alfabeta(gamestate, True, float('-inf'), float('inf'))
                 et = time.perf_counter()
@@ -252,10 +278,12 @@ def main_app(root):
                 print("heiristiskais novērtējums: ", value)
 
     def retry():
+        # pogas retry funkcija kas izveido jaunu speli
         window.destroy()
         main_app(root)
         
     def on_start():
+        # uz start pogas nospiešanas izsauc izveles funkcijas un izveido speles koku
         global gamestate,ai
         str_btn.destroy()
         choice_var, start_player_var, ai_var = create_choices(window, starting_num)
@@ -272,6 +300,7 @@ def main_app(root):
             
     
     def on_choice():
+        # Funkcija kas izveido galveno speles ekranu un ja ai ir jāsāk pirmajam tad izsauc to
         global label_p1, label_bank, label_p2, label_num, div2_btn, div3_btn, label_turn
         label_p1, label_bank, label_p2, label_turn=create_player_labels(window)
         label_num=make_label(window,225,85,50,175,text=gamestate.num)
@@ -286,6 +315,7 @@ def main_app(root):
         
 
     def div2():
+        # Funkcija kas nobīda spēles stavokli uz koka kreiso pēcteci un pārbauda vai spēle nav beigusies un izsauc ai
         global gamestate
         if gamestate.left is None:
             div2_btn["state"] = "disabled"
@@ -295,6 +325,7 @@ def main_app(root):
         call_ai()
         
     def div3():
+        # Funkcija kas nobīda spēles stavokli uz koka labo pēcteci un pārbauda vai spēle nav beigusies un izsauc ai
         global gamestate
         if gamestate.right is None:
             div3_btn["state"] = "disabled"
@@ -305,6 +336,9 @@ def main_app(root):
 
 
     def check_forwinner():
+        # Logika kas pārbauda vai spele nav beigusies un ja ir tad
+        # tad izveido spels beigu ekranu un pieskaita bankas punktus tam kas ir pedējais gajiens
+        # un izvada uzvarētaju
         global gamestate
         update_points()
         if gamestate.gamestate_terminal():
@@ -336,6 +370,7 @@ def main_app(root):
 
 
     def update_points():
+        # Funkcija kas atjauno grafiskas saskarsnes ekranu ar patreizējo spēles stavokli
         label_bank.config(text="BANK: " + str(gamestate.points[1]))
         label_num.config(text=gamestate.num)
         label_p1.config(text="Player: " + str(gamestate.points[0]))
@@ -353,6 +388,7 @@ def main_app(root):
     str_btn = make_button(window, 100, 100, 200, 425, text="START", command=lambda: on_start() )
 
 def main():
+    # Funkcija kas inicializē speli un tās logu
     root = tk.Tk()
     root.title("K21 1. projekts")
     root.geometry("625x400")
@@ -360,4 +396,5 @@ def main():
     root.mainloop()
     
 if __name__ == "__main__":
+    # Funkcija kas iniciālize kodu
     main()  
